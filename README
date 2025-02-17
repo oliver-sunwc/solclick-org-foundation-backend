@@ -1,0 +1,66 @@
+Notes on SPL-TOKEN
+
+
+
+1. How to change multisig-authority using solana-cli. 
+(do not include # in the commands)
+
+spl-token authorize #mint mint #multisigKey --owner #oldKey --multisig-signer #oldKey1 --multisig-signer #oldkey2
+
+#multisigKey - multisig address of new mint authority
+#oldkey - multisig address of previous mint authority
+#oldKey1 and #oldKey2 - ledger wallet address of 2/3 keys connected to the old multisig authority. Needs both to be connected or needs an offline transaction to be done.
+
+2. How to change transfer authority of a token account using solana-cli.
+
+spl-token authorize #tokenAcc transfer #multisigKey
+
+#tokenAcc - address of spl-token holder account created by spl-token create-account #mint
+
+3. How to use durable nonces for offline transaction.
+
+A durable nonce is a solana keypair (.json) that is required for persistent offline multisig transaction.
+
+A durable nonce consists of a nonce blockhash (used in the --blockhash tag for solana transactions in place of a recent blockhash) and
+a nonce authority (another keypair that pays for)
+
+Step 1 is to create a durable nonce:
+solana-keygen new -o nonce.json
+solana create-nonce-account nonce.json 0.0015
+0.0015 is the minimum required amount of SOL in the nonce account. The default nonce authority for the created nonce
+is the keypair specified by 'solana config get'
+
+This nonce can be used for any number of transactions.
+
+Step 2 is to inspect the durable nonce.
+solana nonce-account nonce.json
+
+will return a statement looking like this:
+
+Balance: 0.0015 SOL
+Minimum Balance Required: 0.00144768 SOL
+Nonce blockhash: AkrQn5QWLACSP5EMT2R1ZHyKaGWVFrDHJ6NL89HKtwjQ <- current nonce blockhash
+Fee: 5000 lamports per signature
+Authority: 5CZKcm6PakaRWGK8NogzXvj8CjA71uSofKLohoNi4Wom <- public key of the nonce authority
+
+To create an offline transaction using a nonce account in solana-cli (necessary for minting)
+
+We will use minting as an example.
+
+multisigKey = EwKPqA2Tk2WDnTyzSX67d3MoXPhq76AaeQHa9ouu43oC
+made up by these three pubkeys: 4X1BaVmxine5Z3NegP2a1RPTzACdxzjcWdB3JHth4bf1, DP31fQXyGEukrHWubAP3D6SD3ZNeCSJTj1px9oEyneHn, 7ah4M2ywDeKZoWRmomfnP1GxbFj5GLLywre3Wxj9MwrY
+mint = 4triyjr1wQyamYqeUEETMsX4Dsd4stGyV2vABY8TEBJs
+tokenAcc = PBSEQbn1qDARCB7R8TJDb5sQgPPx8eiT7AUPzohqq8U <---- the $CLICK address of the receiver of minted tokens
+noncePubkey = BUstyqMrCEZn3PJaXNWtbkvgBtiARsBNkjd5oFvwRBgb
+payerPubkey = 8KWM22BxguAmCGDF2L1mCavCvykZuydyt8khm7orj869
+
+To issue a mint transaction in solana-cli, the basic form is:
+spl-token mint #mint #mintAmount #tokenAcc --owner #multisigKey --multisig-signer signer1.json --multisig-signer signer2.json
+
+Since we don't have access to the private key of both signers, we must use an offline transaction. To do this, we replace
+the PATH/TO/KEYPAIR parts of the --multisig-signer with the public key of the multisig signer that we have missing. In this case,
+the path to signer1.json is usb://ledger and we do not have the keypair for signer2.json
+
+spl-token mint #mint #mintAmount #tokenAcc --owner #multisigKey \
+--multisig-signer signer1.json \
+--multisig-signer DP31fQXyGEukrHWubAP3D6SD3ZNeCSJTj1px9oEyneHn \
