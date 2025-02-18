@@ -1,3 +1,2 @@
 This is a RESTFUL API backend that interacts with the Solana blockchain in order to authorize the minting and transfer of our Solana SPL-Token.
-
-
+It integrates with a React front-end interface that calls the api services in ./service.
