@@ -1,6 +1,7 @@
+This is a RESTFUL API backend that interacts with the Solana blockchain in order to authorize the minting and transfer of our Solana SPL-Token.
+
+
 Notes on SPL-TOKEN
-
-
 
 1. How to change multisig-authority using solana-cli. 
 (do not include # in the commands)
